@@ -11,7 +11,7 @@ https://masothue.com/url-khac-2
 ```
 
 ## Bước 2: Chạy chương trình
-Có 3 cách:
+Có 2 cách:
 
 ### Cách 1: Double-click file batch
 - Double-click file `run_crawler.bat`

@@ -2,6 +2,7 @@
 # Mỗi URL một dòng, bỏ qua các dòng bắt đầu bằng #
 
 https://masothue.com/4601034603-cong-ty-co-phan-do-dac-va-ban-do-thai-an
+https://masothue.com/4601034603-cong-ty-co-phan-do-dac-va-ban-do-thai-an
 https://masothue.com/4600321203-cong-ty-tnhh-do-dac-va-ban-do-thai-do
 
 # Thêm các URL khác vào đây:

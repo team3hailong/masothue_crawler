@@ -116,18 +116,26 @@ class MasothueCrawler:
             return None
     
     def load_urls_from_file(self, filename='urls.txt'):
-        """Đọc danh sách URL từ file"""
+        """Đọc danh sách URL từ file và loại bỏ URL trùng lặp"""
         urls = []
+        seen_urls = set()
+        duplicate_count = 0
+        
         try:
             with open(filename, 'r', encoding='utf-8') as f:
-                for line in f:
+                for line_num, line in enumerate(f, 1):
                     line = line.strip()
                     # Bỏ qua dòng trống và dòng comment
                     if line and not line.startswith('#'):
                         if line.startswith('https://masothue.com'):
-                            urls.append(line)
+                            if line in seen_urls:
+                                duplicate_count += 1
+                                print(f"⚠ URL trùng lặp (dòng {line_num}): {line}")
+                            else:
+                                seen_urls.add(line)
+                                urls.append(line)
                         else:
-                            print(f"⚠ Bỏ qua URL không hợp lệ: {line}")
+                            print(f"⚠ Bỏ qua URL không hợp lệ (dòng {line_num}): {line}")
         except FileNotFoundError:
             print(f"✗ Không tìm thấy file {filename}")
             return []
@@ -135,10 +143,22 @@ class MasothueCrawler:
             print(f"✗ Lỗi khi đọc file {filename}: {str(e)}")
             return []
         
+        if duplicate_count > 0:
+            print(f"📊 Đã loại bỏ {duplicate_count} URL trùng lặp")
+        
         return urls
     
     def crawl_multiple_urls(self, urls):
         """Crawl nhiều URL và lưu kết quả"""
+        # Kiểm tra và thông báo về URL trùng lặp trước khi crawl
+        original_count = len(urls)
+        unique_urls = list(dict.fromkeys(urls))  # Giữ thứ tự và loại bỏ trùng lặp
+        
+        if len(unique_urls) < original_count:
+            duplicate_count = original_count - len(unique_urls)
+            print(f"🔍 Phát hiện {duplicate_count} URL trùng lặp, chỉ crawl {len(unique_urls)} URL duy nhất")
+            urls = unique_urls
+        
         for i, url in enumerate(urls, 1):
             print(f"\n[{i}/{len(urls)}] Đang xử lý...")
             
@@ -172,13 +192,60 @@ class MasothueCrawler:
         df.to_excel(filename, index=False, engine='openpyxl')
         print(f"✓ Đã lưu dữ liệu ra file: {filename}")
         print(f"Tổng số công ty: {len(self.results)}")
-
+    
+    def check_duplicate_urls(self, filename='urls.txt'):
+        """Kiểm tra và báo cáo URL trùng lặp trong file"""
+        urls = []
+        url_lines = {}  # Dictionary để lưu URL và số dòng
+        duplicates = []
+        
+        try:
+            with open(filename, 'r', encoding='utf-8') as f:
+                for line_num, line in enumerate(f, 1):
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        if line.startswith('https://masothue.com'):
+                            if line in url_lines:
+                                duplicates.append({
+                                    'url': line,
+                                    'first_line': url_lines[line],
+                                    'duplicate_line': line_num
+                                })
+                            else:
+                                url_lines[line] = line_num
+                            urls.append(line)
+            
+            print(f"📊 Kết quả kiểm tra file {filename}:")
+            print(f"   - Tổng số URL: {len(urls)}")
+            print(f"   - URL duy nhất: {len(url_lines)}")
+            print(f"   - URL trùng lặp: {len(duplicates)}")
+            
+            if duplicates:
+                print("\n🔍 Chi tiết URL trùng lặp:")
+                for dup in duplicates:
+                    print(f"   - Dòng {dup['duplicate_line']}: trùng với dòng {dup['first_line']}")
+                    print(f"     URL: {dup['url']}")
+            else:
+                print("✓ Không có URL trùng lặp!")
+                
+            return duplicates
+            
+        except FileNotFoundError:
+            print(f"✗ Không tìm thấy file {filename}")
+            return []
+        except Exception as e:
+            print(f"✗ Lỗi khi kiểm tra file {filename}: {str(e)}")
+            return []
 
 def main():
     print("=== MASOTHUE.COM CRAWLER ===")
     
     # Tạo crawler
     crawler = MasothueCrawler()
+    
+    # Kiểm tra URL trùng lặp trước
+    print("\n🔍 Kiểm tra URL trùng lặp...")
+    crawler.check_duplicate_urls('urls.txt')
     
     # Đọc URL từ file
     urls = crawler.load_urls_from_file('urls.txt')
@@ -188,7 +255,7 @@ def main():
         print("Vui lòng thêm URL vào file 'urls.txt'")
         return
     
-    print(f"Số lượng URL cần crawl: {len(urls)}")
+    print(f"\nSố lượng URL duy nhất cần crawl: {len(urls)}")
     
     # Hiển thị danh sách URL
     print("\nDanh sách URL sẽ được crawl:")
